@@ -93,7 +93,7 @@ instructions = {
 
 def parse_instruction(state: AssemblerState, line: str):
     by_space = line.split(" ")
-    instruction = by_space[0]
+    instruction = by_space[0].lower()
     args = by_space[1:]
     if instruction not in instructions:
         print("instruction", instruction, "not found")

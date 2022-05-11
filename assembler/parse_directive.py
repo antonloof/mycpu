@@ -43,7 +43,7 @@ def parse_pc_directive(args: List[str], state: AssemblerState):
 
 def parse_directive(state, directive):
     by_space = directive.split(" ")
-    name = by_space[0]
+    name = by_space[0].lower()
     args = by_space[1:]
     if name not in directives:
         print("directive", name, "not found")
