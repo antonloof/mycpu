@@ -8,6 +8,7 @@ from black import err
 from assembler_state import *
 from parse_common import *
 from parse_directive import parse_directive
+from parse_instruction import parse_instruction
 
 
 def validate_label(label: str):
@@ -50,7 +51,7 @@ def assemble(input_path: pathlib.Path):
             error = parse_label(state, label)
         else:
             # instruction
-            pass
+            error = parse_instruction(state, no_comments)
         if error:
             return True
 
