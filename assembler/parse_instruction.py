@@ -11,8 +11,11 @@ def parse_st(state: AssemblerState, args: List[str]):
     if len(args) != 2:
         print("Wrong number of arguments for ST:", args)
         return True
-    s0 = characterize_symbol(args[0])
-    s1 = characterize_symbol(args[1])
+
+    e0, s0 = characterize_symbol(args[0])
+    e1, s1 = characterize_symbol(args[1])
+    if e0 or e1:
+        return True
     error = True
     if s0 == SYMBOL_REG:
         error, r0 = parse_register(args[0])

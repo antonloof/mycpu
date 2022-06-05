@@ -1,10 +1,16 @@
+import struct
+
+
 class AssemblerState:
     def __init__(self) -> None:
-        self.program = [0] * (2 ** 16)  # there is memory to waste on my pc :D
+        self.program = [0] * (2**16)  # there is memory to waste on my pc :D
         self.sp = 0
         self.pc = 0
         self.origin = 0
         self.labels = {}
+
+    def program_as_bytearry(self):
+        return struct.pack(f"{2**16}i", *self.program)
 
     def word_directive(self, val):
         self.program[self.origin] = val
