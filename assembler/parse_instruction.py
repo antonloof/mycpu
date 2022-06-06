@@ -1,10 +1,6 @@
-from ast import arg
-from os import stat
-
-from black import err
-from assembler_state import AssemblerState
-from typing import List
-from parse_common import *
+from typing import List, Dict
+from assembler.parse_common import *
+from assembler.assembler_state import AssemblerState
 
 
 def parse_st(state: AssemblerState, args: List[str]):
@@ -24,23 +20,31 @@ def parse_st(state: AssemblerState, args: List[str]):
         if s1 == SYMBOL_REG:
             error, r1 = parse_register(args[1])
             state.insert_8_8_8_8(0b00000000, r0.number, r1.number, 0)
-        if s1 == SYMBOL_CONST_ADDR:
-            error, c1 = parse_address(args[1])
+        elif s1 == SYMBOL_CONST_ADDR:
+            if is_label(args[1]):
+                c1 = state.handle_label(args[1], 0, 0)
+                error = False
+            else:
+                error, c1 = parse_address(args[1])
             state.insert_8_8_16(0b00000001, r0.number, c1)
-        if s1 == SYMBOL_CONST:
+        elif s1 == SYMBOL_CONST:
             error, c1 = parse_constant(args[1])
             state.insert_8_8_8_8_32(0b00000011, r0.number, 0, 0, c1)
-        if s1 == SYMBOL_REG_ADDR:
-            error, r1 = parse_constant(args[1])
+        elif s1 == SYMBOL_REG_ADDR:
+            error, r1 = parse_register(args[1])
             state.insert_8_8_8_8(0b00000101, r0.number, r1.number, 0)
-    if s0 == SYMBOL_CONST_ADDR:
-        error, c0 = parse_address(args[0])
+    elif s0 == SYMBOL_CONST_ADDR:
+        if is_label(args[0]):
+            c0 = state.handle_label(args[0], 0, 0)
+            error = False
+        else:
+            error, c0 = parse_address(args[0])
         if error:
             return True
         if s1 == SYMBOL_REG:
             error, r1 = parse_register(args[1])
             state.insert_8_8_16(0b00000010, r1.number, c0)
-    if s0 == SYMBOL_REG_ADDR:
+    elif s0 == SYMBOL_REG_ADDR:
         error, r0 = parse_register(args[0])
         if error:
             return True
@@ -54,8 +58,10 @@ def parse_alu(state, args, accumelate_reg_opcode, accumelate_const_opcode, name)
     if len(args) != 2:
         print(f"Wrong number of arguments for {name}:", args)
         return True
-    s0 = characterize_symbol(args[0])
-    s1 = characterize_symbol(args[1])
+    e0, s0 = characterize_symbol(args[0])
+    e1, s1 = characterize_symbol(args[1])
+    if e0 or e1:
+        return True
     error = False
     if s0 == SYMBOL_REG:
         error, r0 = parse_register(args[0])
@@ -119,8 +125,8 @@ def parse_mac(state: AssemblerState, args: List[str]):
         return True
 
     error0, r0 = parse_register(args[0])
-    error1, r1 = parse_register(args[0])
-    error2, r2 = parse_register(args[0])
+    error1, r1 = parse_register(args[1])
+    error2, r2 = parse_register(args[2])
     if error0 or error1 or error2:
         return True
     state.insert_8_8_8_8(0b01010001, r0.number, r1.number, r2.number)
@@ -128,15 +134,19 @@ def parse_mac(state: AssemblerState, args: List[str]):
 
 def parse_jmp(state: AssemblerState, args: List[str]):
     if len(args) != 1:
-        print(f"Wrong number of arguments for JMp:", args)
+        print(f"Wrong number of arguments for JMP:", args)
         return True
-    error, c0 = parse_constant(args[0])
+    if is_label(args[0]):
+        error = False
+        c0 = state.handle_label(args[0], 1, 0)
+    else:
+        error, c0 = parse_address(args[0])
     if error:
         return True
     state.insert_8_8_8_8_16(0b10000000, 0, 0, 0, c0)
 
 
-def parse_branching(state, args, mode_to_opcodes, name):
+def parse_branching(state: AssemblerState, args: List[str], mode_to_opcodes: Dict[str, tuple[int, int]], name: str):
     if len(args) != 4:
         print(f"Wrong number of arguments for {name}:", args)
         return True
@@ -144,16 +154,24 @@ def parse_branching(state, args, mode_to_opcodes, name):
         print("comparisson", args[1], "does not exist")
         return True
     error0, r0 = parse_register(args[0])
-    error1, c0 = parse_constant(args[3])
+    if is_label(args[3]):
+        error1 = False
+        c0 = state.handle_label(args[3], 1, 0)
+    else:
+        error1, c0 = parse_address(args[3])
+
     if error0 or error1:
         return True
-    s1 = characterize_symbol(args[2])
+    error = True
+    e1, s1 = characterize_symbol(args[2])
+    if e1:
+        return True
     if s1 == SYMBOL_CONST:
         error, c1 = parse_constant(args[2])
-        state.insert_8_8_16_16(mode_to_opcodes[args[1]], r0.number, c1, c0)
+        state.insert_8_8_16_16(mode_to_opcodes[args[1]][1], r0.number, c1, c0)
     if s1 == SYMBOL_REG:
         error, r1 = parse_register(args[2])
-        state.insert_8_8_8_8_16(mode_to_opcodes[args[1]], r0.number, r1.number, 0, c0)
+        state.insert_8_8_8_8_16(mode_to_opcodes[args[1]][0], r0.number, r1.number, 0, c0)
     return error
 
 
@@ -187,11 +205,11 @@ def parse_psh(state: AssemblerState, args: List[str]):
 
 
 def parse_nop(state: AssemblerState, args: List[str]):
-    state.insert_8_8_8_8(0b10000010, 0, 0, 0)
+    state.insert_8_8_8_8(0b11000010, 0, 0, 0)
 
 
 def parse_hlt(state: AssemblerState, args: List[str]):
-    state.insert_8_8_8_8(0b10000011, 0, 0, 0)
+    state.insert_8_8_8_8(0b11000011, 0, 0, 0)
 
 
 def parse_pop(state: AssemblerState, args: List[str]):
@@ -231,9 +249,6 @@ def parse_instruction(state: AssemblerState, line: str):
     by_space = line.split(" ")
     instruction = by_space[0].lower()
     args = by_space[1:]
-    for i in range(len(args)):
-        if args[i] in state.labels:
-            args[i] = f"${state.labels[args[i]]}"
     if instruction not in instructions:
         print("instruction", instruction, "not found")
         return True

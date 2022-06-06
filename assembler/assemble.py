@@ -1,36 +1,18 @@
 import argparse, pathlib
 
-from assembler_state import *
-from parse_common import *
-from parse_directive import parse_directive
-from parse_instruction import parse_instruction
-
-
-def validate_label(label: str):
-    valid_label_chars = "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789_"
-    if set(label) - set(valid_label_chars):
-        print("Invalid char in label:", label, "Valid chars are", valid_label_chars)
-        return True, ""
-    return False, label
-
-
-def parse_label(state: AssemblerState, val: str):
-    error, label = validate_label(val)
-    if error:
-        return True
-    state.add_label(label)
-    return False
+from assembler.assembler_state import *
+from assembler.parse_common import *
+from assembler.parse_directive import parse_directive
+from assembler.parse_instruction import parse_instruction
+from assembler.parse_label import parse_label
+from typing import List
 
 
 def strip_comments(line):
     return line.split(";")[0].strip()
 
 
-def assemble(input_path: pathlib.Path, output_path: pathlib.Path):
-    state = AssemblerState()
-    with input_path.open() as f:
-        lines = f.readlines()
-
+def text_to_program(lines: List[str], state: AssemblerState):
     for lineno, line in enumerate(lines):
         no_comments = strip_comments(line)
         error = False
@@ -50,8 +32,16 @@ def assemble(input_path: pathlib.Path, output_path: pathlib.Path):
         if error:
             print("got error at line", lineno, ":", line)
             return True
+    if state.undeclared_labels:
+        print("Some labels were not declared:", *list(state.undeclared_labels.keys()))
+    return False
 
-    print(state.program[0:10])
+
+def assemble(input_path: pathlib.Path, output_path: pathlib.Path):
+    state = AssemblerState()
+    with input_path.open() as f:
+        lines = f.readlines()
+    text_to_program(lines, state)
     with output_path.open("wb") as f:
         f.write(state.program_as_bytearry())
 

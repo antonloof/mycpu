@@ -1,6 +1,6 @@
 from typing import List
-from parse_common import *
-from assembler_state import *
+from assembler.parse_common import *
+from assembler.assembler_state import *
 
 
 def parse_word_directive(args: List[str], state: AssemblerState):
@@ -24,23 +24,6 @@ def parse_origin_directive(args: List[str], state: AssemblerState):
     state.origin_directive(val)
     return False
 
-
-def parse_sp_directive(args: List[str], state: AssemblerState):
-    if len(args) != 0:
-        print("wrong number of arguments expected 0 got", args)
-        return True
-    state.sp_directive()
-    return False
-
-
-def parse_pc_directive(args: List[str], state: AssemblerState):
-    if len(args) != 0:
-        print("wrong number of arguments expected 0 got", args)
-        return True
-    state.pc_directive()
-    return False
-
-
 def parse_directive(state, directive):
     by_space = directive.split(" ")
     name = by_space[0].lower()
@@ -53,7 +36,4 @@ def parse_directive(state, directive):
 
 directives = {
     "word": parse_word_directive,
-    "origin": parse_origin_directive,
-    "sp": parse_sp_directive,
-    "pc": parse_pc_directive,
-}
+    "origin": parse_origin_directive,}

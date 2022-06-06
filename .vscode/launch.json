@@ -16,7 +16,8 @@
                 "${workspaceFolder}/assembler/some_code.as",
                 "-o",
                 "${workspaceFolder}/assembler/assembled.bin"
-            ]
+            ],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
