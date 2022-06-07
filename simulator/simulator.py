@@ -170,8 +170,8 @@ class CpuState:
     def run_instruction_0b11000001(self):
         # POP Rxx
         rx = get_byte_i(self.memory[self.pc], 2)
-        self.regs[rx] = self.memory[self.regs[SP]]
         self.regs[SP] -= 1
+        self.regs[rx] = self.memory[self.regs[SP]]
         self.pc += 1
 
     def run_instruction_0b11000010(self):

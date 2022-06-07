@@ -40,7 +40,11 @@ class TestSTInstructions(SimulatorTestBase):
 
     def test_st_label_addr_to_reg(self):
         state = self.assemble_and_run("ST R0 var", "HLT", "var:")
-        self.assertEqual(state.regs[0], 2)
+        self.assertEqual(state.regs[0], 3)
+
+    def test_st_to_sp(self):
+        state = self.assemble_and_run("ST SP stack_start", "HLT", "stack_start:")
+        self.assertEqual(state.regs[255], 3)
 
 
 class TestALUInstructions(SimulatorTestBase):
@@ -62,7 +66,11 @@ class TestALUInstructions(SimulatorTestBase):
 
     def test_sub_regs_overflow(self):
         state = self.assemble_and_run("ST R0 #1", "ST R1 #2", "SUB R0 R1", "HLT")
-        self.assertEqual(state.regs[0], 2**32 - 1)
+        self.assertEqual(state.regs[0], 2 ** 32 - 1)
+
+    def test_sub_overflow(self):
+        state = self.assemble_and_run("ST R0 #0x80000000", "ST R1 #1", "SUB R0 R1", "HLT")
+        self.assertEqual(state.regs[0], 0x7FFFFFFF)
 
     def test_sub_constant(self):
         state = self.assemble_and_run("ST R0 #3", "SUB R0 #2", "HLT")
@@ -116,7 +124,7 @@ class TestALUInstructions(SimulatorTestBase):
 class TestBranch(SimulatorTestBase):
     def test_jmp(self):
         # failes with exception (too many instructions in simulation) if jmp does not work
-        self.assemble_and_run("JMP $10999", ".origin #11000", "HLT")
+        self.assemble_and_run("JMP #10999", ".origin #11000", "HLT")
 
     def test_br_eq_positive(self):
         state = self.assemble_and_run(
@@ -141,6 +149,101 @@ class TestBranch(SimulatorTestBase):
             "ST R0 #2", "ST R1 #2", "BR R0 != R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
         )
         self.assertEqual(state.regs[2], 2)
+
+    def test_br_lt_positive(self):
+        state = self.assemble_and_run(
+            "ST R0 #1", "ST R1 #2", "BR R0 < R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 1)
+
+    def test_br_lt_negative(self):
+        state = self.assemble_and_run(
+            "ST R0 #3", "ST R1 #2", "BR R0 < R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 2)
+
+    def test_br_gt_positive(self):
+        state = self.assemble_and_run(
+            "ST R0 #2", "ST R1 #1", "BR R0 > R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 1)
+
+    def test_br_gt_negative(self):
+        state = self.assemble_and_run(
+            "ST R0 #1", "ST R1 #2", "BR R0 > R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 2)
+
+    def test_brs_lt_positive(self):
+        state = self.assemble_and_run(
+            "ST R0 #-1", "ST R1 #2", "BRs R0 < R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 1)
+
+    def test_brs_lt_negative(self):
+        state = self.assemble_and_run(
+            "ST R0 #3", "ST R1 #-4", "BRs R0 < R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 2)
+
+    def test_brs_gt_positive(self):
+        state = self.assemble_and_run(
+            "ST R0 #-4", "ST R1 #-6", "BRs R0 > R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 1)
+
+    def test_brs_gt_negative(self):
+        state = self.assemble_and_run(
+            "ST R0 #-1", "ST R1 #2", "BRs R0 > R1 here", "ST R2 #2", "HLT", "here:", "ST R2 #1", "HLT"
+        )
+        self.assertEqual(state.regs[2], 2)
+
+
+class TestStack(SimulatorTestBase):
+    def test_push_item(self):
+        state = self.assemble_and_run("ST SP stack_start", "ST R0 #10", "PSH R0", "HLT", "stack_start:")
+        self.assertEqual(state.memory[6], 10)
+
+    def test_pop_item(self):
+        state = self.assemble_and_run("ST SP stack_start", "POP R0", "HLT", ".word #10", "stack_start:")
+        self.assertEqual(state.regs[0], 10)
+
+    def test_push_then_pop(self):
+        state = self.assemble_and_run(
+            "ST SP stack_start",
+            "ST R0 #1",
+            "ST R1 #2",
+            "ST R2 #3",
+            "ST R3 #4",
+            "ST R4 #5",
+            "ST R5 #6",
+            "PSH R0",
+            "PSH R1",
+            "PSH R2",
+            "PSH R3",
+            "PSH R4",
+            "PSH R5",
+            "ST R0 #0",
+            "ST R1 #0",
+            "ST R2 #0",
+            "ST R3 #0",
+            "ST R4 #0",
+            "ST R5 #0",
+            "POP R5",
+            "POP R4",
+            "POP R3",
+            "POP R2",
+            "POP R1",
+            "POP R0",
+            "HLT",
+            "stack_start:",
+        )
+        self.assertEqual(state.regs[0], 1)
+        self.assertEqual(state.regs[1], 2)
+        self.assertEqual(state.regs[2], 3)
+        self.assertEqual(state.regs[3], 4)
+        self.assertEqual(state.regs[4], 5)
+        self.assertEqual(state.regs[5], 6)
 
 
 class TestShortPrograms(SimulatorTestBase):

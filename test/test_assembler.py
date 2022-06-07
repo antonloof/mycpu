@@ -109,43 +109,43 @@ class TestInstructions(unittest.TestCase):
         self.help_test_one_instruction("MAC R12 R123 R213", to_int_4x8(0b01010001, 12, 123, 213))
 
     def test_jmp(self):
-        self.help_test_one_instruction("JMP $2", to_int_4x8(0b10000000, 0, 0, 0), 2)
+        self.help_test_one_instruction("JMP #2", to_int_4x8(0b10000000, 0, 0, 0), 2)
 
     def test_br_eq0(self):
-        self.help_test_one_instruction("BR R34 == R23 $12341234", to_int_4x8(0b10000001, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BR R34 == R23 #12341234", to_int_4x8(0b10000001, 34, 23, 0), 12341234)
 
     def test_br_eq1(self):
-        self.help_test_one_instruction("BR R34 == #1234 $12341234", to_int_2x8_1x16(0b10000010, 34, 1234), 12341234)
+        self.help_test_one_instruction("BR R34 == #1234 #12341234", to_int_2x8_1x16(0b10000010, 34, 1234), 12341234)
 
     def test_br_neq0(self):
-        self.help_test_one_instruction("BR R34 != R23 $12341234", to_int_4x8(0b10000011, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BR R34 != R23 #12341234", to_int_4x8(0b10000011, 34, 23, 0), 12341234)
 
     def test_br_neq1(self):
-        self.help_test_one_instruction("BR R34 != #1234 $12341234", to_int_2x8_1x16(0b10000100, 34, 1234), 12341234)
+        self.help_test_one_instruction("BR R34 != #1234 #12341234", to_int_2x8_1x16(0b10000100, 34, 1234), 12341234)
 
     def test_br_lt0(self):
-        self.help_test_one_instruction("BR R34 < R23 $12341234", to_int_4x8(0b10000101, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BR R34 < R23 #12341234", to_int_4x8(0b10000101, 34, 23, 0), 12341234)
 
     def test_br_lt1(self):
-        self.help_test_one_instruction("BR R34 < #1234 $12341234", to_int_2x8_1x16(0b10000110, 34, 1234), 12341234)
+        self.help_test_one_instruction("BR R34 < #1234 #12341234", to_int_2x8_1x16(0b10000110, 34, 1234), 12341234)
 
     def test_br_gt0(self):
-        self.help_test_one_instruction("BR R34 > R23 $12341234", to_int_4x8(0b10000111, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BR R34 > R23 #12341234", to_int_4x8(0b10000111, 34, 23, 0), 12341234)
 
     def test_br_gt1(self):
-        self.help_test_one_instruction("BR R34 > #1234 $12341234", to_int_2x8_1x16(0b10001000, 34, 1234), 12341234)
+        self.help_test_one_instruction("BR R34 > #1234 #12341234", to_int_2x8_1x16(0b10001000, 34, 1234), 12341234)
 
     def test_brs_lt0(self):
-        self.help_test_one_instruction("BRs R34 < R23 $12341234", to_int_4x8(0b10001001, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BRs R34 < R23 #12341234", to_int_4x8(0b10001001, 34, 23, 0), 12341234)
 
     def test_brs_lt1(self):
-        self.help_test_one_instruction("BRs R34 < #1234 $12341234", to_int_2x8_1x16(0b10001010, 34, 1234), 12341234)
+        self.help_test_one_instruction("BRs R34 < #1234 #12341234", to_int_2x8_1x16(0b10001010, 34, 1234), 12341234)
 
     def test_brs_gt0(self):
-        self.help_test_one_instruction("BRs R34 > R23 $12341234", to_int_4x8(0b10001011, 34, 23, 0), 12341234)
+        self.help_test_one_instruction("BRs R34 > R23 #12341234", to_int_4x8(0b10001011, 34, 23, 0), 12341234)
 
     def test_brs_gt1(self):
-        self.help_test_one_instruction("BRs R34 > #1234 $12341234", to_int_2x8_1x16(0b10001100, 34, 1234), 12341234)
+        self.help_test_one_instruction("BRs R34 > #1234 #12341234", to_int_2x8_1x16(0b10001100, 34, 1234), 12341234)
 
     def test_psh(self):
         self.help_test_one_instruction("PSH R1", to_int_4x8(0b11000000, 1, 0, 0))

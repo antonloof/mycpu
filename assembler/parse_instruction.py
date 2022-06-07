@@ -21,14 +21,14 @@ def parse_st(state: AssemblerState, args: List[str]):
             error, r1 = parse_register(args[1])
             state.insert_8_8_8_8(0b00000000, r0.number, r1.number, 0)
         elif s1 == SYMBOL_CONST_ADDR:
-            if is_label(args[1]):
-                c1 = state.handle_label(args[1], 0, 0)
-                error = False
-            else:
-                error, c1 = parse_address(args[1])
+            error, c1 = parse_address(args[1])
             state.insert_8_8_16(0b00000001, r0.number, c1)
         elif s1 == SYMBOL_CONST:
-            error, c1 = parse_constant(args[1])
+            if is_label(args[1]):
+                c1 = state.handle_label(args[1], 1, 0)
+                error = False
+            else:
+                error, c1 = parse_constant(args[1])
             state.insert_8_8_8_8_32(0b00000011, r0.number, 0, 0, c1)
         elif s1 == SYMBOL_REG_ADDR:
             error, r1 = parse_register(args[1])
@@ -140,7 +140,7 @@ def parse_jmp(state: AssemblerState, args: List[str]):
         error = False
         c0 = state.handle_label(args[0], 1, 0)
     else:
-        error, c0 = parse_address(args[0])
+        error, c0 = parse_constant(args[0])
     if error:
         return True
     state.insert_8_8_8_8_16(0b10000000, 0, 0, 0, c0)
@@ -158,7 +158,7 @@ def parse_branching(state: AssemblerState, args: List[str], mode_to_opcodes: Dic
         error1 = False
         c0 = state.handle_label(args[3], 1, 0)
     else:
-        error1, c0 = parse_address(args[3])
+        error1, c0 = parse_constant(args[3])
 
     if error0 or error1:
         return True

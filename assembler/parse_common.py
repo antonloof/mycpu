@@ -103,7 +103,7 @@ def characterize_symbol(candidate: str):
             return False, SYMBOL_REG_ADDR
         else:
             return False, SYMBOL_CONST_ADDR
-    # labels are addrs
+    # labels are constants
     if is_label(candidate):
-        return False, SYMBOL_CONST_ADDR
+        return False, SYMBOL_CONST
     return True, -1
